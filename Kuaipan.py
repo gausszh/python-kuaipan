@@ -44,6 +44,46 @@ class Kuaipan(object):
     def __init__(self):
         super(Kuaipan, self).__init__()
 
+class MyOatuthRequest(oauth.Request):
+    """docstring for MyOatuthRequest"""
+    def __init__(self, method="GET", url=None, parameters=None,
+                 body='', is_form_encoded=False):
+        if url is not None:
+            self.url = url
+        self.method = method
+        if parameters is not None:
+            for k, v in parameters.iteritems():
+                self[k] = v
+        self.body = body
+        self.is_form_encoded = is_form_encoded
+
+    @classmethod
+    def from_consumer_and_token(cls, consumer, token=None,
+            http_method="GET", http_url=None, parameters=None,
+            body='', is_form_encoded=False):
+        if not parameters:
+            parameters = {}
+ 
+        defaults = {
+            'oauth_consumer_key': consumer.key,
+            'oauth_timestamp': cls.make_timestamp(),
+            'oauth_nonce': cls.make_nonce(),
+            'oauth_version': cls.version,
+        }
+ 
+        defaults.update(parameters)
+        parameters = defaults
+ 
+        if token:
+            parameters['oauth_token'] = token.key
+            if token.verifier:
+                parameters['oauth_verifier'] = token.verifier
+ 
+        return MyOatuthRequest(http_method, http_url, parameters, body=body, 
+                       is_form_encoded=is_form_encoded)
+ 
+        
+
 class KuaipanFile(object):
     """
     Support all functions for Kuaipan fileops. You may add/delete/remove/edit your file on Kuaipan with simple functino calls
@@ -96,7 +136,7 @@ class KuaipanFile(object):
         return opener
 
     def GetOauthUrl(self, url, method='GET', parameters=None):
-        oauth_request = oauth.Request.from_consumer_and_token(self.consumer,
+        oauth_request = MyOatuthRequest.from_consumer_and_token(self.consumer,
                                                                     token=self.token,
                                                                     http_method=method,
                                                                     http_url=url,
